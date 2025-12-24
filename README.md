@@ -7,6 +7,23 @@ Web-based port of GTA: Vice City running in browser via WebAssembly.
 - Docker or Python 3.8+ or PHP 8.0+
 - Dependencies from `requirements.txt`
 
+## Quick Start
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/Lolendor/reVCDOS.git
+    cd reVCDOS
+    ```
+
+2. **Configure Assets** (Optional):
+   The project can use the **DOS.Zone CDN** by default. However, if you want to use local assets:
+   * Download your assets into the `vcsky/{fetched, fetched-ru}/{data/..., audio/..., anim/..., models/...}` and `vcbr/{vc-sky-en-v6.data.br, vc-sky-en-v6.wasm.br, vc-sky-ru-v6.data.br, vc-sky-ru-v6.wasm.br}` directories.
+    
+3. **Launch the Application**:
+   Choose one of the setup methods below:
+   * **Docker** (Recommended for most users) — fast and isolated.
+   * **Manual Installation** — for development and customization.
+
 ## Setup & Running
 
 ### Option 1: Using Docker (Recommended)
@@ -144,11 +161,16 @@ python server.py --port 3000 --custom_saves --login admin --password secret123 -
 │   ├── vc-sky-en-v6.wasm.br
 │   ├── vc-sky-ru-v6.data.br
 │   └── vc-sky-ru-v6.wasm.br
-└── vcsky/              # Additional assets (optional)
-    ├── data/
-    ├── audio/
-    ├── models/
-    └── anim/
+└── vcsky/                 # Decompressed assets
+    ├── fetched/           # English version files
+    │   ├── data/
+    │   ├── audio/
+    │   ├── models/
+    │   └── anim/
+    └── fetched-ru/        # Russian version files
+        ├── data/
+        ├── audio/
+        └── ...
 ```
 
 ## Features
