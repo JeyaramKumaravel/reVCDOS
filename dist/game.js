@@ -20,7 +20,7 @@ const cheatsEnabled = params.get('cheats') === "1"
 if (params.get('request_original_game') !== "1")
     localStorage.setItem('vcsky.haveOriginalGame', 'true');
 
-const maxFPS = parseInt(new URLSearchParams(window.location.search).get('max_fps')) || 0;
+const maxFPS = parseInt(params.get('max_fps')) || 0;
 
 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let isTouch = isMobile && window.matchMedia('(pointer: coarse)').matches;
