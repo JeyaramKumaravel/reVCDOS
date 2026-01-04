@@ -304,7 +304,12 @@ async function loadGame(data) {
         preRun: [],
         postRun: [],
         print: (...args) => console.log(args.join(' ')),
-        printErr: (...args) => console.error(args.join(' ')),
+        printErr: (...args) => {
+            const msg = args.join(' ');
+            // Suppress harmless warnings
+            if (msg.includes('alGetProcAddress') || msg.includes('casepath couldn\'t find')) return;
+            console.error(msg);
+        },
         getPreloadedPackage: () => {
             return data.buffer;
         },
@@ -492,29 +497,39 @@ clickToPlay.addEventListener('click', (e) => {
     }
     if (e.target === clickToPlay || e.target === clickLink) {
         startGame(e);
-        if (!isMobile && autoFullScreen) {
+        if (autoFullScreen) {
             if (window.top === window) {
-                document.body.requestFullscreen(document.documentElement);
+                // Use documentElement for better mobile compatibility
+                const elem = document.documentElement;
+                const requestFS = elem.requestFullscreen || elem.webkitRequestFullscreen || elem.mozRequestFullScreen || elem.msRequestFullscreen;
+                if (requestFS) {
+                    requestFS.call(elem).catch(err => {
+                        console.warn('Fullscreen request failed:', err);
+                    });
+                }
             } else {
                 window.top.postMessage({
                     event: 'request-fullscreen',
                 }, '*');
             }
-            function lockMouseIfNeeded() {
-                if (!document.pointerLockElement && typeof Module !== 'undefined' && Module.canvas) {
-                    Module.canvas.requestPointerLock({
-                        unadjustedMovement: true,
-                    }).catch(() => {
-                        console.warn('Failed to lock in unadjusted movement mode');
-                        Module.canvas.requestPointerLock().catch(() => {
-                            console.error('Failed to lock in default mode');
+            // Desktop-only: pointer lock and keyboard lock
+            if (!isMobile) {
+                function lockMouseIfNeeded() {
+                    if (!document.pointerLockElement && typeof Module !== 'undefined' && Module.canvas) {
+                        Module.canvas.requestPointerLock({
+                            unadjustedMovement: true,
+                        }).catch(() => {
+                            console.warn('Failed to lock in unadjusted movement mode');
+                            Module.canvas.requestPointerLock().catch(() => {
+                                console.error('Failed to lock in default mode');
+                            });
                         });
-                    });
+                    }
                 }
-            }
-            document.addEventListener("mousedown", lockMouseIfNeeded, { capture: true });
-            if (navigator.keyboard && navigator.keyboard.lock) {
-                navigator.keyboard.lock(["Escape", "KeyW"]);
+                document.addEventListener("mousedown", lockMouseIfNeeded, { capture: true });
+                if (navigator.keyboard && navigator.keyboard.lock) {
+                    navigator.keyboard.lock(["Escape", "KeyW"]);
+                }
             }
         }
     } else if (window.top !== window) {
