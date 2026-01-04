@@ -110,38 +110,38 @@ window.t = function (key) {
 function updateAllTranslations() {
     const keyInput = document.querySelector('.jsdos-key-input');
     if (keyInput) keyInput.setAttribute('placeholder', t("enterJsDosKey"));
-    
+
     const clickToPlayButton = document.getElementById('click-to-play-button');
     if (clickToPlayButton) {
         clickToPlayButton.textContent = haveOriginalGame ? t('clickToPlayFull') : t('clickToPlayDemo');
     }
-    
+
     const demoOffDisclaimer = document.getElementById('demo-off-disclaimer');
     if (demoOffDisclaimer) {
         demoOffDisclaimer.textContent = haveOriginalGame ? "" : "* " + t('demoOffDisclaimer');
     }
-    
+
     const cloudSavesLink = document.getElementById('cloud-saves-link');
     if (cloudSavesLink) cloudSavesLink.textContent = t('cloudSaves');
-    
+
     const cloudSavesStatus = document.getElementById('cloud-saves-status');
     if (cloudSavesStatus) cloudSavesStatus.textContent = t('enterKey');
-    
+
     const playDemoText = document.getElementById('play-demo-text');
     if (playDemoText) playDemoText.textContent = t('playDemoText');
-    
+
     const disclaimerText = document.getElementById('disclaimer-text');
     if (disclaimerText) disclaimerText.textContent = t('disclaimer');
-    
+
     const disclaimerSources = document.getElementById('disclaimer-sources');
     if (disclaimerSources) disclaimerSources.textContent = t('disclaimerSources');
-    
+
     const disclaimerCheckboxLabel = document.getElementById('disclaimer-checkbox-label');
     if (disclaimerCheckboxLabel) disclaimerCheckboxLabel.textContent = t('disclaimerCheckbox');
-    
+
     const portBy = document.getElementById('port-by');
     if (portBy) portBy.textContent = t('portBy');
-    
+
     // Update developed-by section for ruTranslate
     const developedBy = document.querySelector('.developed-by');
     const existingTranslatedBy = developedBy?.querySelector('.translated-by');
@@ -149,20 +149,20 @@ function updateAllTranslations() {
     if (developedBy && t('ruTranslate')) {
         developedBy.insertAdjacentHTML('beforeend', t('ruTranslate'));
     }
-    
+
     // Update config panel labels if present
     const configLangLabel = document.getElementById('config-lang-label');
     if (configLangLabel) configLangLabel.textContent = t('configLanguage');
-    
+
     const configCheatsLabel = document.getElementById('config-cheats-label');
     if (configCheatsLabel) configCheatsLabel.textContent = t('configCheats');
-    
+
     const configFullscreenLabel = document.getElementById('config-fullscreen-label');
     if (configFullscreenLabel) configFullscreenLabel.textContent = t('configFullscreen');
-    
+
     const configMaxFpsLabel = document.getElementById('config-max-fps-label');
     if (configMaxFpsLabel) configMaxFpsLabel.textContent = t('configMaxFps');
-    
+
     const configMaxFpsUnlimited = document.getElementById('config-max-fps-unlimited');
     if (configMaxFpsUnlimited) configMaxFpsUnlimited.textContent = t('configUnlimited');
 }
@@ -335,7 +335,27 @@ async function loadGame(data) {
         info,
         receiveInstance,
     ) => {
-        const wasm = await (await fetch(wasm_content ? wasm_content : "index.wasm")).arrayBuffer();
+        const wasmUrl = wasm_content ? wasm_content : "index.wasm";
+        const response = await fetch(wasmUrl);
+
+        if (!response.ok) {
+            const errorMsg = `Failed to load WASM file (${response.status}): ${wasmUrl}. Make sure the game assets are available. Run the server with --packed or --unpacked option to download them.`;
+            console.error(errorMsg);
+            Module.setStatus(errorMsg);
+            throw new Error(errorMsg);
+        }
+
+        const wasm = await response.arrayBuffer();
+
+        // Check for valid WASM magic bytes (00 61 73 6d)
+        const magicBytes = new Uint8Array(wasm.slice(0, 4));
+        if (magicBytes[0] !== 0x00 || magicBytes[1] !== 0x61 || magicBytes[2] !== 0x73 || magicBytes[3] !== 0x6d) {
+            const errorMsg = `Invalid WASM file received. The server may be returning compressed data or an error page. Make sure Content-Encoding headers are correct for .br files.`;
+            console.error(errorMsg, "Magic bytes:", Array.from(magicBytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
+            Module.setStatus(errorMsg);
+            throw new Error(errorMsg);
+        }
+
         const module = await WebAssembly.instantiate(wasm, info);
         return receiveInstance(module.instance, module);
     };
@@ -591,7 +611,7 @@ const clickToPlayButton = document.getElementById('click-to-play-button');
 clickToPlayButton.textContent = t('clickToPlayDemo');
 clickToPlayButton.classList.add('disabled');
 const demoOffDisclaimer = document.getElementById('demo-off-disclaimer');
-demoOffDisclaimer.textContent = "* " +t('demoOffDisclaimer');
+demoOffDisclaimer.textContent = "* " + t('demoOffDisclaimer');
 const cloudSavesLink = document.getElementById('cloud-saves-link');
 cloudSavesLink.textContent = t('cloudSaves');
 cloudSavesStatus.textContent = t('enterKey');
@@ -624,7 +644,7 @@ function ownerShipNotConfirmed() {
     localStorage.removeItem('vcsky.haveOriginalGame');
     disclaimerCheckbox.checked = false;
     clickToPlayButton.textContent = t('clickToPlayDemo');
-    demoOffDisclaimer.textContent = "* " +t('demoOffDisclaimer');
+    demoOffDisclaimer.textContent = "* " + t('demoOffDisclaimer');
     haveOriginalGame = false;
     clickToPlayButton.classList.add('disabled');
 };
@@ -806,20 +826,20 @@ if (configurableMode) {
     const configCheats = document.getElementById('config-cheats');
     const configFullscreen = document.getElementById('config-fullscreen');
     const configMaxFps = document.getElementById('config-max-fps');
-    
+
     if (configPanel && configCheats && configFullscreen && configMaxFps) {
         // Show config panel
         configPanel.style.display = 'block';
-        
+
         // Set initial values from URL params
         if (configLang) configLang.value = currentLanguage;
         configCheats.checked = cheatsEnabled;
         configFullscreen.checked = autoFullScreen;
         configMaxFps.value = maxFPS;
-        
+
         // Update config panel labels with current language
         updateAllTranslations();
-        
+
         // Language selector handler
         if (configLang) {
             configLang.addEventListener('change', (e) => {
@@ -828,16 +848,16 @@ if (configurableMode) {
                 updateAllTranslations();
             });
         }
-        
+
         // Update settings when changed
         configCheats.addEventListener('change', (e) => {
             cheatsEnabled = e.target.checked;
         });
-        
+
         configFullscreen.addEventListener('change', (e) => {
             autoFullScreen = e.target.checked;
         });
-        
+
         configMaxFps.addEventListener('input', (e) => {
             maxFPS = parseInt(e.target.value) || 0;
         });
